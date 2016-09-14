@@ -187,6 +187,42 @@ public class KeychainSwift {
     return boolValue
   }
 
+    /**
+     
+     Return all saved keys in Keychain
+     
+     - returns: The String array with saved keys
+     
+     */
+  public func getAllKeys() -> [String]? {
+        
+    var query: [String: NSObject] = [ kSecClass as String : kSecClassGenericPassword ]
+    query = addAccessGroupWhenPresent(query)
+    query = addSynchronizableIfRequired(query, addingItems: false)
+    query[kSecMatchLimit as String] = kSecMatchLimitAll
+    query[kSecReturnAttributes as String] = true
+    lastQueryParameters = query
+        
+    var result: AnyObject?
+    var keys = [String]()
+        
+    lastResultCode = withUnsafeMutablePointer(&result) {
+        SecItemCopyMatching(query as CFDictionary, UnsafeMutablePointer($0))
+    }
+        
+    if let items = result as? [[String: AnyObject]] {
+        for item in items {
+            if let key = item[String(kSecAttrAccount)] as? String {
+                keys.append(key)
+            }
+        }
+    }
+        
+    if lastResultCode == noErr { return keys }
+        
+    return nil
+  }
+    
   /**
 
   Deletes the single keychain item specified by the key.
